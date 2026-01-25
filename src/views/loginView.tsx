@@ -1,10 +1,60 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import AuthLayout from "../layouts/authLayout"; // ajusta la ruta
+import type { LoginData } from "../types";
+import { useForm } from "react-hook-form";
 import ErrorMessage from "../components/errorMessage";
+import axiosInstance from "../config/axios";
+import { isAxiosError } from "axios";
+import Swal from "sweetalert2";
 
 export default function LoginView() {
+  const {register, handleSubmit, formState: { errors }} = useForm<LoginData>();
+  const handleLogin = async (formData: LoginData) => {
+     // Excluir confirmPassword antes de enviar al backend
+        const {  ...loginData } = formData;
+        console.log(loginData);
+        try {
+            const response = await axiosInstance.post(`/auth/login`, loginData);
+            localStorage.setItem('AUTH_TOKEN', response.data.token);
+            console.log('Login response:', response.data);
+            
+            // Mostrar mensaje de éxito con SweetAlert2
+            await Swal.fire({
+                icon: 'success',
+                title: '¡Login exitoso!',
+                text: 'Has iniciado sesión correctamente',
+                confirmButtonColor: '#184E8B'
+            });
+            
+            // Redirigir o realizar otra acción después del éxito
+        } catch (error) {
+            if (isAxiosError(error) && error.response) {
+                console.error('Error en la respuesta del servidor:', error.response.data);
+                
+                // Mostrar mensaje de error con SweetAlert2
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error en el registro',
+                    text: error.response.data.message || 'Ocurrió un error al registrar el usuario',
+                    confirmButtonColor: '#184E8B'
+                });
+            } else {
+                console.error('Error en la solicitud:', error);
+                
+                // Mostrar mensaje de error genérico
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error inesperado',
+                    text: 'Ocurrió un error inesperado. Por favor, intenta de nuevo.',
+                    confirmButtonColor: '#184E8B'
+                });
+            }
+        }
+  };
+
   const [showPassword, setShowPassword] = useState(false);
+
 
   return (
     <AuthLayout>
@@ -35,7 +85,7 @@ export default function LoginView() {
         </div>
       </div>
 
-      <form>
+      <form onSubmit={handleSubmit(handleLogin)}>
         <div className="space-y-6">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-[#185183] mb-2">
@@ -46,7 +96,9 @@ export default function LoginView() {
               type="email"
               placeholder="info@gmail.com"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder:text-gray-400 focus:ring-2 focus:ring-[#184E8B] focus:border-transparent dark:bg-white dark:text-black dark:border-gray-300"
+              {...register("email", { required: "Email is required" })}
             />
+            {errors.email && <ErrorMessage message={errors.email.message || "Invalid email"} />}
             
           </div>
 
@@ -61,7 +113,10 @@ export default function LoginView() {
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder:text-gray-400 focus:ring-2 focus:ring-[#184E8B] focus:border-transparent dark:bg-white dark:text-black dark:border-gray-300"
+                {...register("password", { required: "Password is required" })}
+
               />
+              {errors.password && <ErrorMessage message={errors.password.message || "Invalid password"} />}
 
               <span
                 onClick={() => setShowPassword((prev) => !prev)}

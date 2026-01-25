@@ -10,6 +10,10 @@ export type RegisterData = Pick<User, 'name' | 'lastName' | 'email'> & {
     company?: string
 }
 
+export type LoginData = Pick<User, 'email'> & {
+    password: string
+}
+
 export type Company = {
     id: string
     name: string
