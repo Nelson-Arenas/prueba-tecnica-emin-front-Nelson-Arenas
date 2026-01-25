@@ -1,14 +1,54 @@
 import { Link } from "react-router-dom";
 import AuthLayout from "../layouts/authLayout"; // ajusta la ruta
-import { useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form';
+import { isAxiosError } from "axios";
+import axiosInstance from "../config/axios";
 import type { RegisterData } from "../types";
 import ErrorMessage from "../components/errorMessage";
+import Swal from 'sweetalert2';
 
 export default function RegisterView() {
     const { register, watch, handleSubmit, formState: { errors } } = useForm<RegisterData>();
-    const handleRegister = (formData: RegisterData) => {
-        console.log(formData); 
-        // Lógica para manejar el envío del formulario
+    const handleRegister = async (formData: RegisterData) => {
+        // Excluir confirmPassword antes de enviar al backend
+        const { confirmPassword, ...registerData } = formData;
+        console.log(registerData);
+        try {
+            const response = await axiosInstance.post(`/auth/register`, registerData);
+            console.log('Usuario registrado:', response.data);
+            
+            // Mostrar mensaje de éxito con SweetAlert2
+            await Swal.fire({
+                icon: 'success',
+                title: '¡Registro exitoso!',
+                text: 'Tu cuenta ha sido creada correctamente',
+                confirmButtonColor: '#184E8B'
+            });
+            
+            // Redirigir o realizar otra acción después del éxito
+        } catch (error) {
+            if (isAxiosError(error) && error.response) {
+                console.error('Error en la respuesta del servidor:', error.response.data);
+                
+                // Mostrar mensaje de error con SweetAlert2
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error en el registro',
+                    text: error.response.data.message || 'Ocurrió un error al registrar el usuario',
+                    confirmButtonColor: '#184E8B'
+                });
+            } else {
+                console.error('Error en la solicitud:', error);
+                
+                // Mostrar mensaje de error genérico
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error inesperado',
+                    text: 'Ocurrió un error inesperado. Por favor, intenta de nuevo.',
+                    confirmButtonColor: '#184E8B'
+                });
+            }
+        }
     };
 
     return (
@@ -52,9 +92,10 @@ export default function RegisterView() {
                             type="text"
                             placeholder="Tu nombre"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder:text-gray-400 focus:ring-2 focus:ring-[#184E8B] focus:border-transparent dark:bg-white dark:text-black dark:border-gray-300"
-                            {...register("name", { required: "Nombre es obligatorio",
+                            {...register("name", {
+                                required: "Nombre es obligatorio",
                                 pattern: { value: /^[A-Za-z]+$/i, message: "Nombre solo debe contener letras" }
-                                
+
                             })}
                         />
                         {errors.name && <ErrorMessage message={errors.name.message as string} />}
@@ -68,13 +109,14 @@ export default function RegisterView() {
                             type="text"
                             placeholder="Tu apellido"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder:text-gray-400 focus:ring-2 focus:ring-[#184E8B] focus:border-transparent dark:bg-white dark:text-black dark:border-gray-300"
-                            {...register("lastName", { required: "Apellido es obligatorio",
+                            {...register("lastName", {
+                                required: "Apellido es obligatorio",
                                 pattern: { value: /^[A-Za-z]+$/i, message: "Apellido solo debe contener letras" }
                             })}
                         />
                         {errors.lastName && <ErrorMessage message={errors.lastName.message as string} />}
                     </div>
-                    
+
 
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-[#185183] mb-2">
@@ -85,27 +127,34 @@ export default function RegisterView() {
                             type="email"
                             placeholder="info@gmail.com"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder:text-gray-400 focus:ring-2 focus:ring-[#184E8B] focus:border-transparent dark:bg-white dark:text-black dark:border-gray-300"
-                            {...register("email", { required: "Email es obligatorio",
+                            {...register("email", {
+                                required: "Email es obligatorio",
                                 pattern: { value: /^\S+@\S+$/i, message: "Formato de email inválido" }
 
                             })}
                         />
                         {errors.email && <ErrorMessage message={errors.email.message as string} />}
                     </div>
+
+
                     <div>
-                        <label htmlFor="companyId" className="block text-sm font-medium text-gray-700 dark:text-[#185183] mb-2">
+                        <label htmlFor="company" className="block text-sm font-medium text-gray-700 dark:text-[#185183] mb-2">
                             Empresa <span className="text-error-500">*</span>
                         </label>
                         <select
-                            id="companyId"
+                            id="company"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder:text-gray-400 focus:ring-2 focus:ring-[#184E8B] focus:border-transparent dark:bg-white dark:text-black dark:border-gray-300"
                             {...register("company", { required: "Empresa es obligatoria" })}
                         >
-                            <option value="">Selecciona una empresa</option>
-                            {/* TODO: Mapear empresas desde API/estado */}
+                            <option>Selecciona una empresa</option>
+                            <option value={1}>GRUPO EMIN</option>
+                            <option value={2}>Empresa 2</option>
+                            <option value={3}>Empresa 3</option>
                         </select>
                         {errors.company && <ErrorMessage message={errors.company.message as string} />}
                     </div>
+
+
 
 
                     <div>
@@ -117,7 +166,8 @@ export default function RegisterView() {
                             type="password"
                             placeholder="Crea una contraseña"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder:text-gray-400 focus:ring-2 focus:ring-[#184E8B] focus:border-transparent dark:bg-white dark:text-black dark:border-gray-300"
-                            {...register("password", { required: "Password es obligatorio" ,
+                            {...register("password", {
+                                required: "Password es obligatorio",
                                 pattern: { value: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/, message: "Password debe tener al menos 8 caracteres, incluyendo letras y números" }
 
                             })}
@@ -134,7 +184,8 @@ export default function RegisterView() {
                             type="password"
                             placeholder="Confirma tu contraseña"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder:text-gray-400 focus:ring-2 focus:ring-[#184E8B] focus:border-transparent dark:bg-white dark:text-black dark:border-gray-300"
-                            {...register("confirmPassword", { required: "Confirmar password es obligatorio" ,
+                            {...register("confirmPassword", {
+                                required: "Confirmar password es obligatorio",
                                 validate: value => value === watch('password') || "Las contraseñas no coinciden"
                             })}
                         />
