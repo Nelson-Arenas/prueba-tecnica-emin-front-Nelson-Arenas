@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import AuthLayout from "../layouts/authLayout"; // ajusta la ruta
+import ErrorMessage from "../components/errorMessage";
 
 export default function LoginView() {
   const [showPassword, setShowPassword] = useState(false);
@@ -37,23 +38,26 @@ export default function LoginView() {
       <form>
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-[#185183] mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-[#185183] mb-2">
               Email <span className="text-error-500">*</span>
             </label>
             <input
+              id="email"
               type="email"
               placeholder="info@gmail.com"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder:text-gray-400 focus:ring-2 focus:ring-[#184E8B] focus:border-transparent dark:bg-white dark:text-black dark:border-gray-300"
             />
+            
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-[#185183] mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-[#185183] mb-2">
               Password <span className="text-error-500">*</span>
             </label>
 
             <div className="relative">
               <input
+                id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder:text-gray-400 focus:ring-2 focus:ring-[#184E8B] focus:border-transparent dark:bg-white dark:text-black dark:border-gray-300"
