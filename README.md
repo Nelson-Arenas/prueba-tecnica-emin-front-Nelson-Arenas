@@ -12,6 +12,11 @@ Manejo de estado (Context/Redux/Zustand, según esté implementado): Control de 
 UI/CSS (Tailwind/Material UI/CSS modules, según esté implementado): Maquetación rápida y consistente.
 Justificación: se eligió un stack moderno de frontend (React + Vite + TS) por su velocidad de desarrollo, facilidad de mantenimiento, y buena integración con APIs REST con autenticación JWT.
 
+# . Instalar MongoDB compass para visualizar los datos
+https://www.mongodb.com/try/download/compass
+StringConnection: mongodb+srv://root:uZBcJp9pmBntJTEI@cluster0.lpxcbjf.mongodb.net/?appName=Cluster0
+
+
 c) Instrucciones para ejecutar localmente
 # 1. Clonar el repositorio (frontend)
 git clone https://github.com/Nelson-Arenas/prueba-tecnica-emin-front-Nelson-Arenas.git
