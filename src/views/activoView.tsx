@@ -5,6 +5,7 @@ import AppLayout from "../layouts/appLayout";
 import Modal from "../components/modal";
 import FormActivoModal, { type FormActivoValues } from "../components/FormActivoModal";
 import Swal from "sweetalert2";
+import { isAxiosError } from "axios";
 
 import {
   getActivos,
@@ -78,6 +79,15 @@ const TYPE_OPTIONS: Array<{ value: "" | ActivoType; label: string }> = [
   { value: "OTRO", label: "Otro" },
 ];
 
+function getApiErrorMessage(error: unknown) {
+  if (isAxiosError(error) && error.response) {
+    const data: any = error.response.data;
+    return data?.message || data?.error || "Ocurrió un error en el servidor.";
+  }
+  if (error instanceof Error) return error.message;
+  return "Ocurrió un error inesperado.";
+}
+
 export default function ActivoView() {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -142,8 +152,6 @@ export default function ActivoView() {
     mutationFn: createActivo,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["activosData"] });
-      setOpen(false);
-      setEditingId(null);
     },
   });
 
@@ -154,8 +162,6 @@ export default function ActivoView() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["activosData"] });
       await queryClient.invalidateQueries({ queryKey: ["activoById", editingId] });
-      setOpen(false);
-      setEditingId(null);
     },
   });
 
@@ -176,7 +182,7 @@ export default function ActivoView() {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "No se pudo eliminar el activo.",
+        text: getApiErrorMessage(error) || "No se pudo eliminar el activo.",
         confirmButtonColor: "#184E8B",
       });
     },
@@ -277,6 +283,41 @@ export default function ActivoView() {
     return String(c);
   };
 
+  // ✅ SUBMIT CENTRALIZADO con Swal (como login)
+  const handleFormSubmit = async (payload: CreateActivoDTO) => {
+    try {
+      if (isEditMode) {
+        await updateMutation.mutateAsync({ id: editingId as string, payload });
+        await Swal.fire({
+          icon: "success",
+          title: "Actualizado",
+          text: "Activo actualizado correctamente.",
+          confirmButtonColor: "#184E8B",
+        });
+      } else {
+        await createMutation.mutateAsync(payload);
+        await Swal.fire({
+          icon: "success",
+          title: "Creado",
+          text: "Activo creado correctamente.",
+          confirmButtonColor: "#184E8B",
+        });
+      }
+
+      // cerrar solo si fue OK
+      setOpen(false);
+      setEditingId(null);
+    } catch (error) {
+      console.error("[SAVE] error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: getApiErrorMessage(error) || "No se pudo guardar el activo.",
+        confirmButtonColor: "#184E8B",
+      });
+    }
+  };
+
   return (
     <AppLayout>
       <div className="flex items-center justify-between mb-4">
@@ -375,12 +416,9 @@ export default function ActivoView() {
                   <th className="px-5 py-3 text-xs font-medium text-left text-gray-500 uppercase">
                     Ubicación
                   </th>
-
-                  {/* ✅ NUEVA columna Empresa */}
                   <th className="px-5 py-3 text-xs font-medium text-left text-gray-500 uppercase">
                     Empresa
                   </th>
-
                   <th className="px-5 py-3 text-xs font-medium text-left text-gray-500 uppercase">
                     Estado
                   </th>
@@ -408,7 +446,6 @@ export default function ActivoView() {
                     <td className="px-5 py-4 text-sm text-gray-500">{activo.serialNumber}</td>
                     <td className="px-5 py-4 text-sm text-gray-500">{activo.location}</td>
 
-                    {/* ✅ Empresa */}
                     <td className="px-5 py-4 text-sm text-gray-500">{renderCompany(activo)}</td>
 
                     <td className="px-5 py-4 text-sm">
@@ -445,7 +482,6 @@ export default function ActivoView() {
 
                 {items.length === 0 && (
                   <tr>
-                    {/* ✅ ahora son 10 columnas */}
                     <td className="px-5 py-6 text-sm text-gray-500" colSpan={10}>
                       No hay activos registrados.
                     </td>
@@ -528,6 +564,7 @@ export default function ActivoView() {
           </div>
         )}
 
+        {/* ya no necesitas estos banners, porque Swal se encarga, pero los dejo si quieres */}
         {(createMutation.isError || updateMutation.isError) && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {isEditMode
@@ -540,10 +577,7 @@ export default function ActivoView() {
           <FormActivoModal
             defaultValues={defaultValues}
             loading={modalLoading}
-            onSubmit={(payload: CreateActivoDTO) => {
-              if (isEditMode) updateMutation.mutate({ id: editingId as string, payload });
-              else createMutation.mutate(payload);
-            }}
+            onSubmit={handleFormSubmit}
           />
         )}
 

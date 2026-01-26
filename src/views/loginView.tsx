@@ -27,7 +27,9 @@ export default function LoginView() {
                 confirmButtonColor: '#184E8B'
             });
             
-            // Redirigir o realizar otra acción después del éxito
+
+            window.location.href = '/home/dashboard';
+            
         } catch (error) {
             if (isAxiosError(error) && error.response) {
                 console.error('Error en la respuesta del servidor:', error.response.data);
@@ -35,8 +37,8 @@ export default function LoginView() {
                 // Mostrar mensaje de error con SweetAlert2
                 Swal.fire({
                     icon: 'error',
-                    title: 'Error en el registro',
-                    text: error.response.data.message || 'Ocurrió un error al registrar el usuario',
+                    title: 'Error en el login',
+                    text: error.response.data.message || 'Ocurrió un error al iniciar sesión',
                     confirmButtonColor: '#184E8B'
                 });
             } else {
