@@ -1,30 +1,150 @@
 import { isAxiosError } from "axios";
 import axiosInstance from "../config/axios";
 import Swal from "sweetalert2";
-import type { User } from "../types";
+import type { User, Activo, Empresas } from "../types";
 
 
-export async function userProfile() {
+
+export async function userProfile(): Promise<User> {
+  try {
+    const { data } = await axiosInstance.get("/user/profile");
+    return data;
+  } catch (error) {
+    if (isAxiosError(error) && error.response) {
+      console.error("Error en la respuesta del servidor:", error.response.data);
+
+      Swal.fire({
+        icon: "error",
+        title: "Inicio de sesión requerido",
+        text:
+          error.response.data.message ||
+          "Ocurrió un error al obtener el perfil del usuario",
+        confirmButtonColor: "#184E8B",
+      });
+    } else {
+      console.error("Error en la solicitud:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error inesperado",
+        text: "Ocurrió un error inesperado. Por favor, intenta de nuevo.",
+        confirmButtonColor: "#184E8B",
+      });
+    }
+    throw error;
+  }
+}
+
+export async function allUsers(): Promise<User[]> {
     try {
-        const response = await axiosInstance.get<User>('/user/profile' );
-        return response.data;
+        const { data } = await axiosInstance.get("/user/all");
+        return data;
     } catch (error) {
         if (isAxiosError(error) && error.response) {
-            console.error('Error en la respuesta del servidor:', error.response.data);
+            console.error("Error en la respuesta del servidor:", error.response.data);
+
             Swal.fire({
-                icon: 'error',
-                title: 'Inicio de sesión requerido',
-                text: error.response.data.message || 'Ocurrió un error al obtener el perfil del usuario',
-                confirmButtonColor: '#184E8B'
+                icon: "error",
+                title: "Error al obtener usuarios",
+                text:
+                    error.response.data.message ||
+                    "Ocurrió un error al obtener los usuarios",
+                confirmButtonColor: "#184E8B",
             });
         } else {
-            console.error('Error en la solicitud:', error);
+            console.error("Error en la solicitud:", error);
+
             Swal.fire({
-                icon: 'error',
-                title: 'Error inesperado',
-                text: 'Ocurrió un error inesperado. Por favor, intenta de nuevo.',
-                confirmButtonColor: '#184E8B'
+                icon: "error",
+                title: "Error inesperado",
+                text: "Ocurrió un error inesperado. Por favor, intenta de nuevo.",
+                confirmButtonColor: "#184E8B",
             });
         }
+        throw error;
+    }
+}
+
+
+
+// Activo APIs
+export async function getActivos(): Promise<Activo[]> {
+  try {
+    const { data } = await axiosInstance.get("/activo/list");
+    return data;
+  } catch (error) {
+    if (isAxiosError(error) && error.response) {
+      console.error("Error en la respuesta del servidor:", error.response.data);
+        Swal.fire({
+        icon: "error",
+        title: "Error al obtener activos",
+        text:
+          error.response.data.message ||
+          "Ocurrió un error al obtener los activos",
+        confirmButtonColor: "#184E8B",
+      });
+    } else {
+      console.error("Error en la solicitud:", error);
+        Swal.fire({
+        icon: "error",
+        title: "Error inesperado",
+        text: "Ocurrió un error inesperado. Por favor, intenta de nuevo.",
+        confirmButtonColor: "#184E8B",
+      });
+    }
+    throw error;
+  }
+}
+
+export type ActivoType = "NOTEBOOK" | "MONITOR" | "LICENCIA" | "PERIFERICO" | "OTRO";
+export type ActivoStatus = "DISPONIBLE" | "ASIGNADO" | "MANTENCION" | "BAJA";
+
+export interface CreateActivoDTO {
+  code: string;
+  name: string;
+  type: ActivoType;
+  brand?: string;
+  model?: string;
+  serialNumber: string;
+  status: ActivoStatus;
+  purchaseDate?: string; // ISO
+  company?: string;
+  location: string;
+  assignedUser?: string | null;
+  notes?: string;
+}
+
+export async function createActivo(payload: CreateActivoDTO) {
+  const { data } = await axiosInstance.post("/activo/register", payload);
+  return data;
+}
+
+
+//api de empresas
+export async function getCompanies(): Promise<Empresas[]> {
+    try {
+        const { data } = await axiosInstance.get("/empresas/list");
+        return data;
+    } catch (error) {
+        if (isAxiosError(error) && error.response) {
+            console.error("Error en la respuesta del servidor:", error.response.data);
+            Swal.fire({
+                icon: "error",
+                title: "Error al obtener empresas",
+                text:
+                    error.response.data.message ||
+                    "Ocurrió un error al obtener las empresas",
+                confirmButtonColor: "#184E8B",
+            });
+        } else {
+            console.error("Error en la solicitud:", error);
+            Swal.fire({
+                icon: "error",
+                title: "Error inesperado",
+                text: "Ocurrió un error inesperado. Por favor, intenta de nuevo.",
+                confirmButtonColor: "#184E8B",
+            });
+        }
+        throw error;
     }
 }
