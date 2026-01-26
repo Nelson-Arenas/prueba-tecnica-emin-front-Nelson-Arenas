@@ -1,5 +1,6 @@
 // src/views/DashboardView.tsx
 import AppLayout from "../layouts/appLayout";
+import Dashboard from "../components/dashboard";
 
 export default function DashboardView() {
   return (
@@ -11,6 +12,7 @@ export default function DashboardView() {
       <p className="text-gray-600">
         Bienvenido al panel principal.
       </p>
+      <Dashboard />
     </AppLayout>
   );
 }
