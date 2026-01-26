@@ -1,5 +1,5 @@
 // src/views/ActivoView.tsx
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import AppLayout from "../layouts/appLayout";
 import Modal from "../components/modal";
@@ -17,6 +17,8 @@ import {
   type ActivoStatus,
   type ActivoType,
 } from "../api/eminApi";
+
+import { useActivoStore } from "../store/activoStore"; // ✅ Zustand store
 
 function statusClasses(status: ActivoStatus) {
   switch (status) {
@@ -89,27 +91,40 @@ function getApiErrorMessage(error: unknown) {
 }
 
 export default function ActivoView() {
-  const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  // ✅ Zustand UI state (modal + edición + filtros + paginación)
+  const open = useActivoStore((s) => s.open);
+  const editingId = useActivoStore((s) => s.editingId);
 
-  // ✅ UI state: filtros + paginación + búsqueda
-  const [q, setQ] = useState("");
-  const [debouncedQ, setDebouncedQ] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"" | ActivoStatus>("");
-  const [typeFilter, setTypeFilter] = useState<"" | ActivoType>("");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const q = useActivoStore((s) => s.q);
+  const debouncedQ = useActivoStore((s) => s.debouncedQ);
+  const statusFilter = useActivoStore((s) => s.statusFilter);
+  const typeFilter = useActivoStore((s) => s.typeFilter);
+  const page = useActivoStore((s) => s.page);
+  const limit = useActivoStore((s) => s.limit);
+
+  const setQ = useActivoStore((s) => s.setQ);
+  const setDebouncedQ = useActivoStore((s) => s.setDebouncedQ);
+  const setStatusFilter = useActivoStore((s) => s.setStatusFilter);
+  const setTypeFilter = useActivoStore((s) => s.setTypeFilter);
+  const setPage = useActivoStore((s) => s.setPage);
+  const setLimit = useActivoStore((s) => s.setLimit);
+
+  const openCreate = useActivoStore((s) => s.openCreate);
+  const openEdit = useActivoStore((s) => s.openEdit);
+  const closeModal = useActivoStore((s) => s.closeModal);
+
+  const resetToFirstPage = useActivoStore((s) => s.resetToFirstPage);
 
   // debounce para no spamear backend
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q.trim()), 350);
     return () => clearTimeout(t);
-  }, [q]);
+  }, [q, setDebouncedQ]);
 
   // si cambian filtros/búsqueda/limit -> volver a página 1
   useEffect(() => {
-    setPage(1);
-  }, [debouncedQ, statusFilter, typeFilter, limit]);
+    resetToFirstPage();
+  }, [debouncedQ, statusFilter, typeFilter, limit, resetToFirstPage]);
 
   const queryClient = useQueryClient();
 
@@ -245,21 +260,6 @@ export default function ActivoView() {
     };
   }, [activoEditing]);
 
-  function openCreate() {
-    setEditingId(null);
-    setOpen(true);
-  }
-
-  function openEdit(id: string) {
-    setEditingId(id);
-    setOpen(true);
-  }
-
-  function closeModal() {
-    setOpen(false);
-    setEditingId(null);
-  }
-
   const modalLoading = createMutation.isPending || updateMutation.isPending;
 
   // UI helper para “Asignado a”
@@ -305,8 +305,7 @@ export default function ActivoView() {
       }
 
       // cerrar solo si fue OK
-      setOpen(false);
-      setEditingId(null);
+      closeModal();
     } catch (error) {
       console.error("[SAVE] error:", error);
       Swal.fire({
@@ -501,7 +500,7 @@ export default function ActivoView() {
 
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page <= 1}
                 className="px-3 py-1.5 text-xs border rounded-md hover:bg-gray-50 disabled:opacity-50"
               >
@@ -529,7 +528,7 @@ export default function ActivoView() {
               </div>
 
               <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page >= totalPages}
                 className="px-3 py-1.5 text-xs border rounded-md hover:bg-gray-50 disabled:opacity-50"
               >
@@ -564,7 +563,6 @@ export default function ActivoView() {
           </div>
         )}
 
-        {/* ya no necesitas estos banners, porque Swal se encarga, pero los dejo si quieres */}
         {(createMutation.isError || updateMutation.isError) && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {isEditMode
@@ -574,11 +572,7 @@ export default function ActivoView() {
         )}
 
         {(!isEditMode || (!!activoEditing && !isLoadingActivoEditing)) && (
-          <FormActivoModal
-            defaultValues={defaultValues}
-            loading={modalLoading}
-            onSubmit={handleFormSubmit}
-          />
+          <FormActivoModal defaultValues={defaultValues} loading={modalLoading} onSubmit={handleFormSubmit} />
         )}
 
         <div className="mt-6 flex items-center justify-end gap-2 border-t border-gray-100 pt-4">

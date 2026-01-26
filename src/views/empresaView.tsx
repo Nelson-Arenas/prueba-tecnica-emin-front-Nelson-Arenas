@@ -1,13 +1,17 @@
 // src/views/EmpresaView.tsx
-import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import AppLayout from "../layouts/appLayout";
 import Modal from "../components/modal";
 import FormEmpresaModal, { type FormEmpresaValues } from "../components/FormEmpresaModal";
 import { getCompanies, createCompany } from "../api/eminApi";
 
+import { useEmpresaStore } from "../store/empresaStore"; // ✅ Zustand
+
 export default function EmpresaView() {
-  const [open, setOpen] = useState(false);
+  const open = useEmpresaStore((s) => s.open);
+  const openCreate = useEmpresaStore((s) => s.openCreate);
+  const closeModal = useEmpresaStore((s) => s.closeModal);
+
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery({
@@ -20,7 +24,7 @@ export default function EmpresaView() {
     mutationFn: (name: string) => createCompany(name),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["companiesData"] });
-      setOpen(false);
+      closeModal(); // ✅ ahora cierra con Zustand
     },
   });
 
@@ -32,7 +36,7 @@ export default function EmpresaView() {
         <h1 className="text-2xl font-semibold text-[#184E8B]">Empresas</h1>
 
         <button
-          onClick={() => setOpen(true)}
+          onClick={openCreate}
           className="px-4 py-2 text-sm font-medium text-white rounded-lg bg-[#184E8B] hover:opacity-90"
         >
           + Nueva empresa
@@ -94,7 +98,7 @@ export default function EmpresaView() {
 
       <Modal
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={closeModal}
         title="Nueva empresa"
         description="Ingresa el nombre para registrar una empresa."
         confirmText="Crear"
@@ -113,7 +117,7 @@ export default function EmpresaView() {
           loading={modalLoading}
           onSubmit={(values: FormEmpresaValues) => {
             const name = values.name.trim();
-            if (!name) return; // evita mandar vacío
+            if (!name) return;
             createMutation.mutate(name);
           }}
         />
@@ -121,7 +125,7 @@ export default function EmpresaView() {
         <div className="mt-6 flex items-center justify-end gap-2 border-t border-gray-100 pt-4">
           <button
             type="button"
-            onClick={() => setOpen(false)}
+            onClick={closeModal}
             disabled={modalLoading}
             className="px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
