@@ -68,24 +68,74 @@ export async function allUsers(): Promise<User[]> {
 
 
 // Activo APIs
-export async function getActivos(): Promise<Activo[]> {
+export type GetActivosParams = {
+  page?: number;
+  limit?: number;
+  q?: string;
+  status?: ActivoStatus;
+  type?: ActivoType;
+};
+
+export type GetActivosResponse = {
+  items: Activo[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export async function getActivos(params?: GetActivosParams): Promise<GetActivosResponse> {
   try {
-    const { data } = await axiosInstance.get("/activo/list");
-    return data;
+    const { data } = await axiosInstance.get("/activo/list", {
+      params: {
+        page: params?.page ?? 1,
+        limit: params?.limit ?? 10,
+        q: params?.q || undefined,
+        status: params?.status || undefined,
+        type: params?.type || undefined,
+      },
+    });
+
+    // ✅ Compatibilidad: si backend aún devuelve Activo[] (sin paginar),
+    // lo envolvemos para que ActivoView no reviente.
+    if (Array.isArray(data)) {
+      const items = data as Activo[];
+      return {
+        items,
+        page: 1,
+        limit: items.length,
+        total: items.length,
+        totalPages: 1,
+      };
+    }
+
+    // ✅ Validación mínima del shape esperado
+    const resp = data as Partial<GetActivosResponse>;
+    if (!Array.isArray(resp.items)) {
+      throw new Error("Respuesta inválida: falta 'items' en /activo/list");
+    }
+
+    return {
+      items: resp.items,
+      page: resp.page ?? params?.page ?? 1,
+      limit: resp.limit ?? params?.limit ?? 10,
+      total: resp.total ?? resp.items.length,
+      totalPages: resp.totalPages ?? 1,
+    };
   } catch (error) {
     if (isAxiosError(error) && error.response) {
       console.error("Error en la respuesta del servidor:", error.response.data);
-        Swal.fire({
+
+      Swal.fire({
         icon: "error",
         title: "Error al obtener activos",
-        text:
-          error.response.data.message ||
-          "Ocurrió un error al obtener los activos",
+        text: error.response.data?.message || "Ocurrió un error al obtener los activos",
         confirmButtonColor: "#184E8B",
       });
     } else {
       console.error("Error en la solicitud:", error);
-        Swal.fire({
+
+      Swal.fire({
         icon: "error",
         title: "Error inesperado",
         text: "Ocurrió un error inesperado. Por favor, intenta de nuevo.",
@@ -95,7 +145,6 @@ export async function getActivos(): Promise<Activo[]> {
     throw error;
   }
 }
-
 export type ActivoType = "NOTEBOOK" | "MONITOR" | "LICENCIA" | "PERIFERICO" | "OTRO";
 export type ActivoStatus = "DISPONIBLE" | "ASIGNADO" | "MANTENCION" | "BAJA";
 
