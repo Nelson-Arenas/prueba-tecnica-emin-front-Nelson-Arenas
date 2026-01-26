@@ -1,7 +1,33 @@
 // src/layouts/AppLayout.tsx
+
+import { Navigate } from "react-router-dom";
+import { userProfile } from "../api/eminApi";
 import Sidebar from "../components/sidebar";
+import { useQuery } from "@tanstack/react-query";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const {data, isLoading, isError} = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: userProfile,
+    retry() {
+      return true;
+    }
+  });
+  console.log(data);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+  if (isError) {
+    return (<Navigate to="/auth/login"></Navigate>
+    );
+  }
+
+ 
   return (
     <div className="min-h-screen flex bg-gray-100">
 
