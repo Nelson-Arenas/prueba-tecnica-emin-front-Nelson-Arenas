@@ -119,6 +119,60 @@ export async function createActivo(payload: CreateActivoDTO) {
   return data;
 }
 
+export async function getActivoById(id: string): Promise<Activo> {
+  try {
+    if (!id || typeof id !== "string") {
+      throw new Error("getActivoById: id inválido o vacío");
+    }
+
+    const { data } = await axiosInstance.post("/activo/find", { id });
+
+    // Normaliza _id -> id para que tu front sea consistente
+    const normalized = {
+      ...data,
+      id: data.id ?? data._id,
+    };
+
+    return normalized as Activo;
+  } catch (error) {
+    if (isAxiosError(error) && error.response) {
+      console.error("[getActivoById] status:", error.response.status);
+      console.error("[getActivoById] data:", error.response.data);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error al obtener activo",
+        text:
+          error.response.data?.message ||
+          "Ocurrió un error al obtener el activo",
+        confirmButtonColor: "#184E8B",
+      });
+    } else {
+      console.error("[getActivoById] Error:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error inesperado",
+        text: "Ocurrió un error inesperado. Por favor, intenta de nuevo.",
+        confirmButtonColor: "#184E8B",
+      });
+    }
+    throw error;
+  }
+}
+
+
+export async function updateActivo(id: string, payload: CreateActivoDTO) {
+  const { data } = await axiosInstance.put(`/activo/update/${id}`, payload);
+  return data;
+}
+
+
+export async function softdeleteActivo(id: string) {
+  const { data } = await axiosInstance.delete(`/activo/delete/${id}`);
+  
+  return data;
+}
 
 //api de empresas
 export async function getCompanies(): Promise<Empresas[]> {
