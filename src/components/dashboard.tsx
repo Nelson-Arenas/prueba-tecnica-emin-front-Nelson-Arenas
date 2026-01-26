@@ -101,13 +101,33 @@ export default function Dashboard() {
 
   // c) Activos por empresa
   const activosPorEmpresa = activos.reduce((acc, activo) => {
-    const empresaId = activo.company;
+    const empresaId =
+      typeof activo.company === "string"
+        ? activo.company
+        : activo.company?._id; // cuando viene populated
+
+    if (!empresaId) return acc;
+
     acc[empresaId] = (acc[empresaId] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  // Mapear IDs de empresa a nombres
+  // Mapear IDs de empresa a nombres (prioriza el populate, luego fallback a lista empresas)
   const empresaLabels = Object.keys(activosPorEmpresa).map((empresaId) => {
+    // 1) si el activo viene populated, puedes rescatar el name desde ahí:
+    const anyActivo = activos.find((a) => {
+      const id = typeof a.company === "string" ? a.company : a.company?._id;
+      return id === empresaId;
+    });
+
+    const nombreDesdePopulate =
+      anyActivo && typeof anyActivo.company !== "string"
+        ? anyActivo.company?.name
+        : undefined;
+
+    if (nombreDesdePopulate) return nombreDesdePopulate;
+
+    // 2) fallback: buscar en tu endpoint /empresas/list
     const empresa = empresas.find((e) => e._id === empresaId);
     return empresa?.name || empresaId;
   });
@@ -124,6 +144,7 @@ export default function Dashboard() {
       },
     ],
   };
+
 
   const chartOptions = {
     responsive: true,
