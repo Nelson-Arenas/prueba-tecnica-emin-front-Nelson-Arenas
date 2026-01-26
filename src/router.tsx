@@ -10,6 +10,8 @@ export function Router() {
         <BrowserRouter>
             <Routes>
 
+                <Route path="/" element={<LoginView />} />
+
                 {/* Auth Routes */}
                 <Route path="/auth/login" element={<LoginView />} />
                 <Route path="/auth/register" element={<RegisterView />} />
