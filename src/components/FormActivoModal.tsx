@@ -5,12 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 
 import { allUsers, getCompanies } from "../api/eminApi";
-import type {ActivoStatus,ActivoType,CreateActivoDTO,} from "../api/eminApi";
+import type {ActivoPriority, ActivoStatus,ActivoType,CreateActivoDTO,} from "../api/eminApi";
 import type { User } from "../types";
 import type { Empresas } from "../types";
 
 const ActivoTypeEnum = z.enum(["NOTEBOOK", "MONITOR", "LICENCIA", "PERIFERICO", "OTRO"]);
 const ActivoStatusEnum = z.enum(["DISPONIBLE", "ASIGNADO", "MANTENCION", "BAJA"]);
+const ActivoPriorityEnum = z.enum(['ALTA', 'MEDIA', 'BAJA']);
 
 // Validador simple para ObjectId
 const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, "Debe ser un ObjectId válido");
@@ -25,6 +26,7 @@ const schema = z.object({
 
   serialNumber: z.string().trim().min(3, "N° de serie requerido (min 3)").max(80, "Muy largo"),
   status: ActivoStatusEnum,
+  priority: ActivoPriorityEnum,
 
   purchaseDate: z.string().optional().or(z.literal("")), // yyyy-mm-dd
 
@@ -85,6 +87,7 @@ export default function FormActivoModal({ defaultValues, loading, onSubmit }: Pr
       location: "",
       assignedUser: "",
       notes: "",
+      priority: "MEDIA",
       ...defaultValues,
     },
   });
@@ -104,6 +107,7 @@ export default function FormActivoModal({ defaultValues, loading, onSubmit }: Pr
         location: "",
         assignedUser: "",
         notes: "",
+        priority: "MEDIA",
         ...defaultValues,
       });
     }
@@ -120,6 +124,7 @@ export default function FormActivoModal({ defaultValues, loading, onSubmit }: Pr
       model: values.model?.trim() || undefined,
       serialNumber: values.serialNumber.trim(),
       status: values.status as ActivoStatus,
+      priority: values.priority as ActivoPriority,
       purchaseDate: values.purchaseDate
         ? new Date(values.purchaseDate + "T00:00:00.000Z").toISOString()
         : undefined,
@@ -166,6 +171,15 @@ export default function FormActivoModal({ defaultValues, loading, onSubmit }: Pr
             <option value="DISPONIBLE">Disponible</option>
             <option value="ASIGNADO">Asignado</option>
             <option value="MANTENCION">Mantención</option>
+            <option value="BAJA">Baja</option>
+          </Select>
+        </Field>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="Prioridad" required error={errors.priority?.message}>
+          <Select {...register("priority")}>
+            <option value="ALTA">Alta</option>
+            <option value="MEDIA">Media</option>
             <option value="BAJA">Baja</option>
           </Select>
         </Field>

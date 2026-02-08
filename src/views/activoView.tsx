@@ -18,7 +18,7 @@ import {
   type ActivoType,
 } from "../api/eminApi";
 
-import { useActivoStore } from "../store/activoStore"; // ✅ Zustand store
+import { useActivoStore } from "../store/activoStore"; 
 
 function statusClasses(status: ActivoStatus) {
   switch (status) {

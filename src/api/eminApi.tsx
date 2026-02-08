@@ -147,6 +147,7 @@ export async function getActivos(params?: GetActivosParams): Promise<GetActivosR
 }
 export type ActivoType = "NOTEBOOK" | "MONITOR" | "LICENCIA" | "PERIFERICO" | "OTRO";
 export type ActivoStatus = "DISPONIBLE" | "ASIGNADO" | "MANTENCION" | "BAJA";
+export type ActivoPriority = "ALTA" | "MEDIA" | "BAJA";
 
 export interface CreateActivoDTO {
   code: string;
@@ -161,6 +162,7 @@ export interface CreateActivoDTO {
   location: string;
   assignedUser?: string | null;
   notes?: string;
+  priority: ActivoPriority;
 }
 
 export async function createActivo(payload: CreateActivoDTO) {
